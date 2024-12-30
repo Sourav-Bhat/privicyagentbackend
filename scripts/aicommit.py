@@ -384,15 +384,19 @@ def get_followup_message():
 
 
 def main(base_url, api_key, model, stream=True, exclude_files=None, debug=False):
-    # ... (The beginning of the main function remains the same) ...
-
+    diff_files = get_staged_diff(exclude_files)
+    if not diff_files:
+        info("No staged changes found. Exiting...")
+        return
     api_url = f"{base_url}/chat/completions"  # This might need to be adjusted for Gemini
-    payload_json = create_payload_json(model, stream)
+    
+    diff_files = get_staged_diff(exclude_files)
+    
+    payload_json = create_payload_json(model, stream=stream)
     payload_json["messages"].append(create_message(diff_files["diff"], role="user"))
-    header = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",  # This should work for Gemini as well
-    }
+    api_url = f"{base_url}/models/{model}:generateContent?key={api_key}"
+    print (api_url)
+    header = {"Content-Type": "application/json"}
     generate_and_commit(api_url, header, payload_json, stream)
     if debug:
         for message in payload_json["messages"]:
@@ -415,7 +419,7 @@ if __name__ == "__main__":
         "-u",
         "--base_url",
         type=str,
-        default=os.getenv("GEMINI_BASE_URL", "https://api.google.com/v1/generativeai"),  # Update base URL
+        default=os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"),  # Update base URL -"https://api.google.com/v1/generativeai"
         help="Base URL of the Gemini API.",
     )
     parser.add_argument(
@@ -432,19 +436,38 @@ if __name__ == "__main__":
         default=os.getenv("GEMINI_MODEL_NAME", "gemini-pro"),  # Update model name
         help="Name of the Gemini model to use.",
     )
+    parser.add_argument(
+        "-e",
+        "--exclude_files",
+        nargs="*",
+        default=[],
+        help="List of files to exclude from the diff",
+    )
+
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode",
+    )
+    
+    parser.add_argument(
+        "--no-stream",
+        action="store_true",
+        help="Disable streaming of the commit message generation",
+    )
 
     # ... (The rest of the argument parsing remains the same) ...
 
     args = parser.parse_args()
 
     try:
-        main(
+       main(
             args.base_url,
             args.api_key,
             args.model,
-            not args.stream,
+            not args.no_stream,  # Use no-stream flag to control streaming
             args.exclude_files,
-            args.debug,
+            args.debug
         )
     except KeyboardInterrupt:
         fail("Interrupted by user.")
