@@ -1,37 +1,76 @@
 # Privacy Agent Backend
 
-## Description
+This is the backend service for the Privacy Agent application, which provides a secure and privacy-focused way to manage user data and interactions.
 
-This project is the backend for the Privacy Agent, responsible for handling data processing, API interactions, agent management, and knowledge base operations.
+## Prerequisites
 
-## Project Setup
+- Python 3.8 or higher
+- Firebase project with Firestore database
+- Clerk account for authentication
 
-1. **Docker Installation:** Ensure you have Docker installed on your machine. You can download it from the official Docker website.
-2. **Environment Variables:**
-    * Set the `OPENAI_API_KEY` environment variable with your OpenAI API key.
-    * Set the `GEMINI_API_KEY` environment variable with your Gemini API key.
-3. **Building the Docker Image:**
-    * Navigate to the project root directory in your terminal.
-    * Run the command `docker-compose build` to build the Docker image.
-4. **Running the Dev Container:**
-    * Run the command `docker-compose up -d` to start the dev container in detached mode. If you want to use an interactive mode, you can use the command: `docker run -it -p 8000:8000 -v $(pwd):/app --name privicyagentbackend-dev privicyagentbackend:latest bash`
-5. **Run the server:** If you are in the container run `uvicorn app:app --host 0.0.0.0 --port 8000`
+## Setup
 
-## Project Structure
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   cd privicyagentbackend
+   ```
 
-* **`agents/`:** Contains the different agent implementations.
-    * `facts_checker_agent.py`: Agent for checking facts.
-    * `legal_agent.py`: Agent for legal-related tasks.
-    * `websearch_agent.py`: Agent for web searches.
-* **`knowledge_base/`:** Contains the knowledge management logic.
-    * `indexing.py`: Code for indexing knowledge.
-    * `retrieval.py`: Code for retrieving knowledge.
-* **`utils/`:** Contains utility functions and helpers.
-    * `api_helpers.py`: Utility functions for API interactions.
-    * `data_processing.py`: Utility functions for data processing.
-* **`src/`:** Contains core application logic
-    * `privicyagentbackend/__init__.py`: Marks the `privicyagentbackend` directory as a Python package.
-* **`app.py`:** Main entry point of the application.
-* **`.idx/dev.nix`:** File with the development configurations for the current project, with Nix.
-* **`docker-compose.yml`:** File with the Docker Compose configurations.
-* **`pyproject.toml`:** File with project metadata, build system, and dependency management.
+2. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+3. Set up environment variables:
+   Create a `.env` file in the root directory with the following variables:
+   ```
+   FIREBASE_PROJECT_ID=your-firebase-project-id
+   FIREBASE_PRIVATE_KEY_ID=your-firebase-private-key-id
+   FIREBASE_PRIVATE_KEY=your-firebase-private-key
+   FIREBASE_CLIENT_EMAIL=your-firebase-client-email
+   FIREBASE_CLIENT_ID=your-firebase-client-id
+   FIREBASE_CLIENT_X509_CERT_URL=your-firebase-client-x509-cert-url
+   CLERK_SECRET_KEY=your-clerk-secret-key
+   ```
+
+   Note: For the `FIREBASE_PRIVATE_KEY`, you need to replace the newlines with `\n` characters.
+
+4. Run the application:
+   ```
+   uvicorn main:app --reload
+   ```
+
+## API Endpoints
+
+- `POST /api/chat`: Send a message to the chat
+- `GET /api/chat/history`: Get the chat history for the current user
+- `POST /api/chat/clear`: Clear the chat history for the current user
+
+## Authentication
+
+The application uses Clerk for authentication. All API endpoints require a valid JWT token in the Authorization header:
+
+```
+Authorization: Bearer <your-jwt-token>
+```
+
+## Database
+
+The application uses Firebase Firestore to store chat messages and user data. The database structure is as follows:
+
+- `users`: Collection of user documents
+  - `{userId}`: Document containing user data
+    - `email`: User's email address
+    - `name`: User's name
+    - `createdAt`: Timestamp when the user was created
+- `chats`: Collection of chat documents
+  - `{chatId}`: Document containing chat data
+    - `userId`: ID of the user who owns the chat
+    - `messages`: Array of message objects
+      - `role`: Role of the message sender (user or assistant)
+      - `content`: Content of the message
+      - `timestamp`: Timestamp when the message was sent
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
